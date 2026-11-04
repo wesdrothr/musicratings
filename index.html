@@ -483,10 +483,18 @@
         }, { onConflict: "user_id" });
         if (error) {
           console.error("Could not sync the music library.", error);
-          accountStatus.textContent = "Changes are saved locally but cloud sync failed.";
+          accountStatus.textContent = isMissingCloudTableError(error)
+            ? "Cloud sync is not set up: create the music_libraries table in Supabase."
+            : "Changes are saved locally but cloud sync failed.";
         } else {
           accountStatus.textContent = "Library synced.";
         }
+      }
+
+      function isMissingCloudTableError(error) {
+        const message = String(error?.message || "").toLower();
+        return message.includes("music_libraries") &&
+          (message.includes("could not find the table") || message.includes("does not exist"));
       }
 
       function queueCloudSave() {
@@ -504,7 +512,9 @@
           .maybeSingle();
         if (error) {
           console.error("Could not load the cloud library.", error);
-          accountStatus.textContent = "Local library loaded; cloud sync is unavailable.";
+          accountStatus.textContent = isMissingCloudTableError(error)
+            ? "Cloud sync is not set up: create the music_libraries table in Supabase."
+            : "Local library loaded; cloud sync is unavailable.";
           return;
         }
         if (data?.songs && Array.isArray(data.songs)) {
