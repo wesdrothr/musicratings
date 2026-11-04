@@ -1,0 +1,9 @@
+{
+  "name": "Tracklist Music Library",
+  "short_name": "Tracklist",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#10131b",
+  "theme_color": "#111827",
+  "description": "Your personal music notebook"
+}
