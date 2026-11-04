@@ -74,6 +74,18 @@ with check ((select auth.uid()) = user_id);
    Sign in or Create account.
 6. Sign in with the same email on your phone and computer.
 
+Transfer existing songs
+
+To copy an existing library to the website or another browser:
+1. Open the old Tracklist page where your songs currently appear.
+2. Click Export in Your songs and save the downloaded JSON file.
+3. On the new Tracklist website, click Import.
+4. Select the exported JSON file.
+5. Confirm replacement when prompted.
+
+Import replaces the library on the current browser. Sign in afterward to upload
+the imported library to Supabase and sync it with your other devices.
+
 GitHub Pages email sign-in
 
 For https://wesdrothr.github.io/musicratings/, set Supabase Authentication URL

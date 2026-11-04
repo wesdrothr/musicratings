@@ -130,6 +130,9 @@
     .list-header h2 { margin: 0; font-size: 16px; }
     .song-count { color: var(--muted); font-size: 12px; }
     .list-tools { display: flex; align-items: center; gap: 10px; }
+    .library-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .library-actions button { min-height: 38px; }
+    #import-library-input { display: none; }
     .library-search { width: min(260px, 35vw); min-height: 38px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); background: var(--panel-raised); font-size: 12px; }
     .library-search::placeholder { color: var(--muted); }
     .rating-search { width: min(220px, 38vw); }
@@ -295,6 +298,11 @@
             <div class="list-tools">
               <input class="library-search" id="songs-search" type="search" placeholder="Search songs, artists, or releases">
               <span class="song-count" id="song-count">0 songs</span>
+            </div>
+            <div class="library-actions">
+              <button class="secondary" id="export-library" type="button">Export</button>
+              <button class="secondary" id="import-library" type="button">Import</button>
+              <input id="import-library-input" type="file" accept=".json,application/json">
             </div>
           </div>
           <div id="song-list"></div>
@@ -1416,6 +1424,68 @@
       artistSearch.addEventListener("input", () => {
         ratingPages.artist.page = 1;
         renderStats();
+      });
+      document.querySelector("#export-library").addEventListener("click", () => {
+        const data = JSON.stringify({ version: 6, songs }, null, 2);
+        const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `tracklist-library-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        notice.textContent = "Library exported.";
+      });
+      const importInput = document.querySelector("#import-library-input");
+      document.querySelector("#import-library").addEventListener("click", () => importInput.click());
+      importInput.addEventListener("change", async () => {
+        const file = importInput.files?.[0];
+        if (!file) return;
+        try {
+          const parsed = JSON.parse(await file.text());
+          const importedSongs = Array.isArray(parsed) ? parsed : parsed.songs;
+          if (!Array.isArray(importedSongs)) throw new Error("The selected file is not a Tracklist library.");
+          if (!window.confirm(`Replace the current library with ${importedSongs.length} imported songs?`)) return;
+          songs = importedSongs.map((song, index) => {
+            const artists = normalizeArtists(song);
+            const releaseType = ["single", "album", "ep"].includes(song.releaseType)
+              ? song.releaseType
+              : (song.isPartOfAlbum ? "album" : "single");
+            return {
+              ...song,
+              id: typeof song.id === "string" ? song.id : `${Date.now()}-${index}`,
+              title: String(song.title || "").trim(),
+              artist: artists.join(", "),
+              artists,
+              releaseType,
+              album: releaseType === "single" ? "" : String(song.album || "").trim(),
+              isPartOfAlbum: releaseType === "album",
+              lengthSeconds: Number(song.lengthSeconds),
+              rating: Number(song.rating),
+              geeked: Boolean(song.geeked),
+              createdAt: Number(song.createdAt) || Date.now() - index
+            };
+          }).filter((song) =>
+            song.title &&
+            Number.isFinite(song.lengthSeconds) &&
+            song.lengthSeconds > 0 &&
+            Number.isFinite(song.rating) &&
+            song.rating >= 0 &&
+            song.rating <= 10
+          );
+          songsPage = 1;
+          if (!saveSongs()) return;
+          renderSongs();
+          renderStats();
+          renderRatingChart();
+          notice.textContent = `${songs.length} songs imported.`;
+        } catch (error) {
+          console.error("Could not import the music library.", error);
+          notice.textContent = "That file could not be imported.";
+        } finally {
+          importInput.value = "";
+        }
       });
       geekedFilter.addEventListener("change", () => {
         ratingPages.album.page = 1;
