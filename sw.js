@@ -1,4 +1,4 @@
-const CACHE_NAME = "tracklist-v1";
+const CACHE_NAME = "tracklist-v3";
 const APP_FILES = ["./", "./index.html", "./manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -18,6 +18,14 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok && event.request.destination !== "document") {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
   );
 });

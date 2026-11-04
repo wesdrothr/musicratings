@@ -377,13 +377,18 @@
     <dialog class="account-dialog" id="account-dialog" aria-labelledby="account-dialog-title">
       <form id="account-form">
         <h2 id="account-dialog-title">Sync your library</h2>
-        <p>Enter your email to receive a secure sign-in link.</p>
+        <p>Sign in with an email and password, or create a new account.</p>
         <div class="field">
           <label for="account-email">Email</label>
           <input id="account-email" type="email" autocomplete="email" required>
         </div>
+        <div class="field">
+          <label for="account-password">Password</label>
+          <input id="account-password" type="password" autocomplete="current-password" minlength="6" required>
+        </div>
         <div class="form-actions">
-          <button class="primary" id="send-signin-link" type="submit">Send sign-in link</button>
+          <button class="primary" id="signin-button" type="submit">Sign in</button>
+          <button class="secondary" id="signup-button" type="button">Create account</button>
           <button class="secondary" id="close-account-dialog" type="button">Close</button>
         </div>
         <p id="account-status" role="status" aria-live="polite"></p>
@@ -449,6 +454,7 @@
       const accountDialog = document.querySelector("#account-dialog");
       const accountForm = document.querySelector("#account-form");
       const accountEmail = document.querySelector("#account-email");
+      const accountPassword = document.querySelector("#account-password");
       const accountStatus = document.querySelector("#account-status");
       const supabase = globalThis.supabase
         ? globalThis.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
@@ -1443,14 +1449,27 @@
           return;
         }
         const email = accountEmail.value.trim();
-        accountStatus.textContent = "Sending sign-in link...";
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: { emailRedirectTo: location.href }
-        });
+        const password = accountPassword.value;
+        accountStatus.textContent = "Signing in...";
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        accountStatus.textContent = error ? `Sign-in failed: ${error.message}` : "Signed in.";
+      });
+      document.querySelector("#signup-button").addEventListener("click", async () => {
+        if (!supabase) {
+          accountStatus.textContent = "Cloud sync is unavailable.";
+          return;
+        }
+        const email = accountEmail.value.trim();
+        const password = accountPassword.value;
+        if (!email || password.length < 6) {
+          accountStatus.textContent = "Enter an email and a password with at least 6 characters.";
+          return;
+        }
+        accountStatus.textContent = "Creating account...";
+        const { error } = await supabase.auth.signUp({ email, password });
         accountStatus.textContent = error
-          ? `Sign-in failed: ${error.message}`
-          : "Check your email for the secure sign-in link.";
+          ? `Account creation failed: ${error.message}`
+          : "Account created and signed in, if email confirmation is disabled.";
       });
       supabase?.auth.onAuthStateChange(async (event, session) => {
         if (event === "SIGNED_IN" && session) {

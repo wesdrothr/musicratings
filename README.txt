@@ -66,7 +66,23 @@ using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
 2. In Supabase Authentication, enable Email provider.
+3. In Authentication settings, enable Email/Password auth and turn off Confirm email
+   if you want account creation without sending confirmation emails.
 3. Add your HTTPS website URL to Authentication Redirect URLs.
 4. Deploy the music-library folder with GitHub Pages or another HTTPS host.
-5. Open Tracklist, click Sign in, enter your email, and open the sign-in link.
+5. Open Tracklist, click Sign in, enter your email and password, and choose
+   Sign in or Create account.
 6. Sign in with the same email on your phone and computer.
+
+GitHub Pages email sign-in
+
+For https://wesdrothr.github.io/musicratings/, set Supabase Authentication URL
+Configuration as follows:
+Site URL: https://wesdrothr.github.io/musicratings/
+Redirect URLs: https://wesdrothr.github.io/musicratings/
+Redirect URLs: https://wesdrothr.github.io/musicratings/index.html
+Redirect URLs: https://wesdrothr.github.io/musicratings/*
+
+After changing these settings, upload the newest index.html and sw.js to GitHub,
+commit them, and wait for GitHub Pages to finish publishing. Request a new email
+link and click it once. Email links expire and older links may stop working.
