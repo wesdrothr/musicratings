@@ -323,22 +323,21 @@
         <article class="card stat-card">
           <p class="stat-label">Average song rating</p>
           <p class="stat-value" id="average-song-rating">—</p>
-          <p class="stat-detail">Out of 10</p>
         </article>
         <article class="card stat-card">
           <p class="stat-label">Average album rating</p>
           <p class="stat-value" id="average-album-rating">—</p>
-          <p class="stat-detail">Out of 10 · album tracks only; each album counts equally</p>
+          <p class="stat-detail">Album tracks only; each album counts equally</p>
         </article>
         <article class="card stat-card">
           <p class="stat-label">Average EP rating</p>
           <p class="stat-value" id="average-ep-rating">—</p>
-          <p class="stat-detail">Out of 10 · EP tracks only; each EP counts equally</p>
+          <p class="stat-detail">EP tracks only; each EP counts equally</p>
         </article>
         <article class="card stat-card">
           <p class="stat-label">Overall average artist rating</p>
           <p class="stat-value" id="average-artist-rating">—</p>
-          <p class="stat-detail">Out of 10 · each artist counts equally</p>
+          <p class="stat-detail">Each artist counts equally</p>
         </article>
         <article class="card stat-card">
           <p class="stat-label">Songs in your library</p>
@@ -652,6 +651,10 @@
       function formatRating(rating) {
         if (Number(rating) === 0) return "Not rated (0)";
         return `${Number.isInteger(rating) ? rating : rating.toFixed(1)} / 10`;
+      }
+
+      function formatAverageRating(rating) {
+        return Number(rating).toFixed(2);
       }
 
       function parseDuration(value) {
@@ -1038,10 +1041,10 @@
         const averageArtist = artists.length ? artists.reduce((sum, artist) => sum + artist.average, 0) / artists.length : null;
         const totalSeconds = ratedStatsSongs.reduce((sum, song) => sum + song.lengthSeconds, 0);
 
-        document.querySelector("#average-song-rating").textContent = averageSong === null ? "—" : `${averageSong.toFixed(1)} / 10`;
-        document.querySelector("#average-album-rating").textContent = averageAlbum === null ? "—" : `${averageAlbum.toFixed(1)} / 10`;
-        document.querySelector("#average-ep-rating").textContent = averageEP === null ? "—" : `${averageEP.toFixed(1)} / 10`;
-        document.querySelector("#average-artist-rating").textContent = averageArtist === null ? "—" : `${averageArtist.toFixed(1)} / 10`;
+        document.querySelector("#average-song-rating").textContent = averageSong === null ? "—" : formatAverageRating(averageSong);
+        document.querySelector("#average-album-rating").textContent = averageAlbum === null ? "—" : formatAverageRating(averageAlbum);
+        document.querySelector("#average-ep-rating").textContent = averageEP === null ? "—" : formatAverageRating(averageEP);
+        document.querySelector("#average-artist-rating").textContent = averageArtist === null ? "—" : formatAverageRating(averageArtist);
         document.querySelector("#total-songs").textContent = String(ratedStatsSongs.length);
         document.querySelector("#total-songs").previousElementSibling.textContent = geekedFilter.checked ? "GEEKED songs" : "Songs in your library";
         const singles = ratedStatsSongs.filter((song) => song.releaseType === "single").length;
@@ -1080,7 +1083,7 @@
             info.append(title, count);
             const score = document.createElement("span");
             score.className = "album-score";
-            score.textContent = formatRating(album.average);
+            score.textContent = formatAverageRating(album.average);
             row.append(info, score);
             breakdown.append(row);
           }
@@ -1119,7 +1122,7 @@
             info.append(title, count);
             const score = document.createElement("span");
             score.className = "album-score";
-            score.textContent = formatRating(ep.average);
+            score.textContent = formatAverageRating(ep.average);
             row.append(info, score);
             epBreakdown.append(row);
           }
@@ -1158,7 +1161,7 @@
             info.append(title, count);
             const score = document.createElement("span");
             score.className = "album-score";
-            score.textContent = formatRating(artist.average);
+            score.textContent = formatAverageRating(artist.average);
             row.append(info, score);
             artistBreakdown.append(row);
           }
