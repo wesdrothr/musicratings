@@ -1,4 +1,4 @@
-const CACHE_NAME = "tracklist-v6";
+const CACHE_NAME = "tracklist-v7";
 const APP_FILES = ["./", "./index.html", "./manifest.json"];
 
 self.addEventListener("install", (event) => {
