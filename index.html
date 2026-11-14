@@ -93,6 +93,13 @@
     .form-card { padding: 23px; }
     .card-heading { margin: 0; font-size: 17px; letter-spacing: -.025em; }
     .card-subheading { margin: 6px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .bulk-entry-toggle { width: 100%; margin-top: 12px; }
+    .bulk-track-list { display: grid; gap: 12px; margin: 18px 0; }
+    .bulk-track-row { display: grid; grid-template-columns: minmax(60px, 1fr) 68px 62px 50px 28px; align-items: end; gap: 6px; border-top: 1px solid var(--border); padding-top: 12px; }
+    .bulk-track-row .field { min-width: 0; margin-bottom: 0; }
+    .bulk-track-row label { font-size: 11px; }
+    .bulk-track-row input { min-width: 0; padding: 9px; }
+    .bulk-track-remove { min-height: 40px; border: 1px solid var(--border); border-radius: 9px; color: var(--danger); background: transparent; font-size: 16px; }
     .field { margin-bottom: 15px; }
     label { display: block; margin-bottom: 7px; color: #d7dce6; font-size: 12px; font-weight: 700; }
     .checkbox-field { display: flex; align-items: center; gap: 10px; }
@@ -133,7 +140,7 @@
     .list-tools { display: flex; align-items: center; gap: 10px; }
     .library-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; width: 100%; margin-left: 0; }
     .library-actions button { min-height: 38px; }
-    #import-library-input, #import-album-csv-input { display: none; }
+    #import-library-input { display: none; }
     .library-search { width: min(260px, 35vw); min-height: 38px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); background: var(--panel-raised); font-size: 12px; }
     .library-search::placeholder { color: var(--muted); }
     .rating-search { width: min(220px, 38vw); }
@@ -212,6 +219,13 @@
     @media (max-width: 520px) {
       .shell { width: min(100% - 28px, 1120px); padding-top: 28px; }
       .form-card { padding: 19px; }
+      .bulk-track-row { grid-template-columns: minmax(0, 1fr) 68px 64px 30px; gap: 6px; }
+      .bulk-track-row input { padding: 8px 6px; font-size: 12px; }
+      .bulk-track-row label { font-size: 10px; }
+      .bulk-track-row .checkbox-field { grid-column: 1 / 4; grid-row: 2; display: flex; justify-items: initial; gap: 8px; }
+      .bulk-track-row .checkbox-field label { margin: 0; }
+      .bulk-track-row .checkbox-field input { width: 18px; height: 18px; min-height: 18px; padding: 0; }
+      .bulk-track-remove { grid-column: 4; grid-row: 2; }
       .stats-grid { gap: 9px; }
       .stat-card { min-height: 126px; padding: 16px; }
       .album-row { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 9px; padding: 13px 17px; }
@@ -256,7 +270,8 @@
 
     <section class="panel active" id="songs-panel" role="tabpanel" aria-labelledby="songs-tab">
       <div class="library-layout">
-        <form class="card form-card" id="song-form">
+        <section class="card form-card" id="song-entry-card">
+          <form id="song-form">
           <h2 class="card-heading" id="form-heading">Add a song</h2>
           <p class="card-subheading">Add a track to your collection and give it a rating.</p>
           <div class="field">
@@ -297,8 +312,35 @@
             <button class="primary" id="submit-button" type="submit">Add song</button>
             <button class="secondary" id="cancel-edit" type="button" hidden>Cancel</button>
           </div>
+          </form>
+          <button class="secondary bulk-entry-toggle" id="show-bulk-entry" type="button">Add multiple album/EP tracks</button>
+          <form id="bulk-song-form" hidden>
+            <h2 class="card-heading">Add album or EP tracks</h2>
+            <p class="card-subheading">Enter the artist and release once, then add each track.</p>
+            <div class="field">
+              <label for="bulk-release-type">Release type</label>
+              <select id="bulk-release-type">
+                <option value="album">Album</option>
+                <option value="ep">EP</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="bulk-artist">Artists</label>
+              <input id="bulk-artist" type="text" maxlength="240" placeholder="e.g. Fleetwood Mac" required>
+            </div>
+            <div class="field">
+              <label for="bulk-release-name">Album / EP name</label>
+              <input id="bulk-release-name" type="text" maxlength="120" placeholder="e.g. Rumours" required>
+            </div>
+            <div class="bulk-track-list" id="bulk-track-list"></div>
+            <button class="secondary" id="add-bulk-track" type="button">Add another track</button>
+            <div class="form-actions">
+              <button class="primary" type="submit">Add tracks</button>
+              <button class="secondary" id="cancel-bulk-entry" type="button">Cancel</button>
+            </div>
+          </form>
           <p class="notice" id="form-notice" role="status" aria-live="polite"></p>
-        </form>
+        </section>
 
         <section class="card list-card" aria-labelledby="songs-heading">
           <div class="list-header">
@@ -310,10 +352,7 @@
             <div class="library-actions">
               <button class="secondary" id="export-library" type="button">Export</button>
               <button class="secondary" id="import-library" type="button">Import JSON</button>
-              <button class="secondary" id="import-album-csv" type="button">Import albums</button>
-              <button class="secondary" id="download-album-csv-template" type="button">CSV template</button>
               <input id="import-library-input" type="file" accept=".json,application/json">
-              <input id="import-album-csv-input" type="file" accept=".csv,text/csv">
             </div>
           </div>
           <div id="song-list"></div>
@@ -438,6 +477,9 @@
       const SUPABASE_URL = "https://pfqjgiagiagvvojiposd.supabase.co";
       const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3-CqXQLt8Zk_sHVkIetkLg_lsfwFvjA";
       const form = document.querySelector("#song-form");
+      const bulkForm = document.querySelector("#bulk-song-form");
+      const bulkTrackList = document.querySelector("#bulk-track-list");
+      const showBulkEntryButton = document.querySelector("#show-bulk-entry");
       const titleInput = document.querySelector("#song-title");
       const artistInput = document.querySelector("#song-artist");
       const albumInput = document.querySelector("#album-title");
@@ -457,6 +499,7 @@
       const tabs = [...document.querySelectorAll('[role="tab"]')];
       let songs = loadSongs();
       let editingId = null;
+      let bulkTrackIndex = 0;
       const SONGS_PER_PAGE = 20;
       let songsPage = 1;
       const songsSearch = document.querySelector("#songs-search");
@@ -664,61 +707,6 @@
 
       function formatAverageRating(rating) {
         return Number(rating).toFixed(2);
-      }
-
-      function parseCsv(text) {
-        const rows = [];
-        let row = [];
-        let field = "";
-        let quoted = false;
-        let quoteClosed = false;
-        for (let index = 0; index < text.length; index += 1) {
-          const character = text[index];
-          if (quoted) {
-            if (character === '"' && text[index + 1] === '"') {
-              field += '"';
-              index += 1;
-            } else if (character === '"') {
-              quoted = false;
-              quoteClosed = true;
-            } else {
-              field += character;
-            }
-          } else if (quoteClosed) {
-            if (character === ",") {
-              row.push(field);
-              field = "";
-              quoteClosed = false;
-            } else if (character === "\n" || character === "\r") {
-              if (character === "\r" && text[index + 1] === "\n") index += 1;
-              row.push(field);
-              if (row.some((value) => value.trim())) rows.push(row);
-              row = [];
-              field = "";
-              quoteClosed = false;
-            } else {
-              throw new Error("The CSV has unexpected text after a quoted field.");
-            }
-          } else if (character === '"' && field.length === 0) {
-            quoted = true;
-          } else if (character === ",") {
-            row.push(field);
-            field = "";
-          } else if (character === "\n" || character === "\r") {
-            if (character === "\r" && text[index + 1] === "\n") index += 1;
-            row.push(field);
-            if (row.some((value) => value.trim())) rows.push(row);
-            row = [];
-            field = "";
-          } else {
-            if (character === '"') throw new Error("The CSV has an unexpected quote.");
-            field += character;
-          }
-        }
-        if (quoted) throw new Error("The CSV has an unclosed quoted field.");
-        row.push(field);
-        if (row.some((value) => value.trim())) rows.push(row);
-        return rows;
       }
 
       function parseDuration(value) {
@@ -1379,9 +1367,92 @@
         document.querySelector("#close-artist-dialog").focus();
       }
 
+      function updateBulkTrackRemoveButtons() {
+        const rows = [...bulkTrackList.querySelectorAll(".bulk-track-row")];
+        for (const row of rows) {
+          row.querySelector(".bulk-track-remove").disabled = rows.length === 1;
+        }
+      }
+
+      function addBulkTrackRow() {
+        const index = bulkTrackIndex;
+        bulkTrackIndex += 1;
+        const row = document.createElement("div");
+        row.className = "bulk-track-row";
+
+        const addInputField = (labelText, type, attributes) => {
+          const field = document.createElement("div");
+          field.className = "field";
+          const label = document.createElement("label");
+          const input = document.createElement("input");
+          input.id = `bulk-track-${index}-${type}`;
+          label.htmlFor = input.id;
+          label.textContent = labelText;
+          input.type = type;
+          for (const [name, value] of Object.entries(attributes)) input.setAttribute(name, value);
+          field.append(label, input);
+          row.append(field);
+          return input;
+        };
+
+        addInputField("Track title", "text", { maxlength: "120", placeholder: "Song title", required: "" });
+        const lengthInput = addInputField("Length", "text", {
+          inputmode: "numeric",
+          pattern: "[0-9]{1,3}:[0-5][0-9]",
+          placeholder: "3:45",
+          required: ""
+        });
+        lengthInput.addEventListener("input", () => lengthInput.setCustomValidity(""));
+        addInputField("Rating", "number", {
+          inputmode: "decimal",
+          min: "0",
+          max: "10",
+          step: "0.5",
+          placeholder: "8.5",
+          required: ""
+        });
+
+        const geekedField = document.createElement("div");
+        geekedField.className = "field checkbox-field";
+        const geekedInput = document.createElement("input");
+        geekedInput.id = `bulk-track-${index}-geeked`;
+        geekedInput.type = "checkbox";
+        const geekedLabel = document.createElement("label");
+        geekedLabel.htmlFor = geekedInput.id;
+        geekedLabel.textContent = "GEEKED";
+        geekedField.append(geekedInput, geekedLabel);
+        row.append(geekedField);
+
+        const removeButton = document.createElement("button");
+        removeButton.className = "bulk-track-remove";
+        removeButton.type = "button";
+        removeButton.textContent = "×";
+        removeButton.setAttribute("aria-label", `Remove track row ${index + 1}`);
+        removeButton.addEventListener("click", () => {
+          row.remove();
+          updateBulkTrackRemoveButtons();
+        });
+        row.append(removeButton);
+        bulkTrackList.append(row);
+        updateBulkTrackRemoveButtons();
+      }
+
+      function closeBulkEntry() {
+        bulkForm.reset();
+        bulkTrackList.replaceChildren();
+        bulkTrackIndex = 0;
+        addBulkTrackRow();
+        bulkForm.hidden = true;
+        form.hidden = false;
+        showBulkEntryButton.hidden = false;
+      }
+
       function resetForm() {
         form.reset();
         editingId = null;
+        form.hidden = false;
+        bulkForm.hidden = true;
+        showBulkEntryButton.hidden = false;
         document.querySelector("#form-heading").textContent = "Add a song";
         document.querySelector("#submit-button").textContent = "Add song";
         document.querySelector("#cancel-edit").hidden = true;
@@ -1389,6 +1460,9 @@
       }
 
       function beginEdit(song) {
+        form.hidden = false;
+        bulkForm.hidden = true;
+        showBulkEntryButton.hidden = false;
         editingId = song.id;
         titleInput.value = song.title;
         artistInput.value = normalizeArtists(song).join(", ");
@@ -1478,6 +1552,79 @@
         titleInput.focus();
       });
 
+      showBulkEntryButton.addEventListener("click", () => {
+        form.hidden = true;
+        bulkForm.hidden = false;
+        showBulkEntryButton.hidden = true;
+        notice.textContent = "";
+        if (bulkTrackList.children.length === 0) addBulkTrackRow();
+        document.querySelector("#bulk-artist").focus();
+      });
+      document.querySelector("#add-bulk-track").addEventListener("click", () => addBulkTrackRow());
+      document.querySelector("#cancel-bulk-entry").addEventListener("click", () => {
+        closeBulkEntry();
+        notice.textContent = "";
+      });
+      bulkForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const releaseType = document.querySelector("#bulk-release-type").value;
+        const artistInput = document.querySelector("#bulk-artist");
+        const releaseNameInput = document.querySelector("#bulk-release-name");
+        const artists = normalizeArtists({ artist: artistInput.value });
+        const releaseName = releaseNameInput.value.trim();
+        const trackRows = [...bulkTrackList.querySelectorAll(".bulk-track-row")];
+        const trackData = [];
+
+        for (const [index, row] of trackRows.entries()) {
+          const inputs = row.querySelectorAll("input");
+          const [trackTitle, lengthInput, ratingInput, geekedInput] = inputs;
+          const lengthSeconds = parseDuration(lengthInput.value);
+          lengthInput.setCustomValidity(lengthSeconds === null
+            ? "Enter a duration such as 4:17, with seconds from 00 to 59."
+            : "");
+          if (!lengthInput.checkValidity()) {
+            lengthInput.reportValidity();
+            return;
+          }
+          trackData.push({
+            title: trackTitle.value.trim(),
+            lengthSeconds,
+            rating: Number(ratingInput.value),
+            geeked: geekedInput.checked,
+            index
+          });
+        }
+
+        const releaseLabel = releaseType === "ep" ? "EP" : "album";
+        if (!window.confirm(`Add ${trackData.length} tracks to ${releaseLabel} "${releaseName}"?`)) return;
+        const createdAt = Date.now();
+        const addedSongs = trackData.map((track) => ({
+          id: globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `${createdAt}-${track.index}-${Math.random()}`,
+          title: track.title,
+          artist: artists.join(", "),
+          artists,
+          releaseType,
+          isPartOfAlbum: releaseType === "album",
+          album: releaseName,
+          lengthSeconds: track.lengthSeconds,
+          rating: track.rating,
+          geeked: track.geeked,
+          createdAt: createdAt - track.index
+        }));
+        const previousSongs = songs;
+        songs = [...addedSongs, ...songs];
+        if (!saveSongs()) {
+          songs = previousSongs;
+          return;
+        }
+        songsPage = 1;
+        closeBulkEntry();
+        renderSongs();
+        renderStats();
+        renderRatingChart();
+        notice.textContent = `${addedSongs.length} tracks added to ${releaseLabel} "${releaseName}".`;
+      });
+
       document.querySelector("#cancel-edit").addEventListener("click", () => {
         resetForm();
         notice.textContent = "";
@@ -1524,92 +1671,6 @@
         link.remove();
         URL.revokeObjectURL(url);
         notice.textContent = "Library exported.";
-      });
-      document.querySelector("#download-album-csv-template").addEventListener("click", () => {
-        const template = "title,artists,album,length,rating,geeked\r\n";
-        const url = URL.createObjectURL(new Blob([template], { type: "text/csv;charset=utf-8" }));
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "tracklist-album-template.csv";
-        document.body.append(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
-        notice.textContent = "Album CSV template downloaded.";
-      });
-      const albumCsvInput = document.querySelector("#import-album-csv-input");
-      document.querySelector("#import-album-csv").addEventListener("click", () => albumCsvInput.click());
-      albumCsvInput.addEventListener("change", async () => {
-        const file = albumCsvInput.files?.[0];
-        if (!file) return;
-        try {
-          const rows = parseCsv((await file.text()).replace(/^\uFEFF/, ""));
-          if (rows.length < 2) throw new Error("The CSV needs a header row and at least one track.");
-
-          const headers = rows[0].map((header) => header.trim().toLocaleLowerCase());
-          const requiredHeaders = ["title", "artists", "album", "length", "rating"];
-          const missingHeaders = requiredHeaders.filter((header) => !headers.includes(header));
-          if (missingHeaders.length) {
-            throw new Error(`Missing required CSV column${missingHeaders.length === 1 ? "" : "s"}: ${missingHeaders.join(", ")}.`);
-          }
-          if (new Set(headers).size !== headers.length) throw new Error("The CSV contains duplicate column names.");
-          const column = Object.fromEntries(headers.map((header, index) => [header, index]));
-          const importedSongs = rows.slice(1).map((values, index) => {
-            const line = index + 2;
-            if (values.length !== headers.length) {
-              throw new Error(`Row ${line}: expected ${headers.length} columns but found ${values.length}.`);
-            }
-            const value = (name) => String(values[column[name]] ?? "").trim();
-            const title = value("title");
-            const artists = normalizeArtists({ artist: value("artists") });
-            const album = value("album");
-            const lengthSeconds = parseDuration(value("length"));
-            const ratingValue = value("rating");
-            const rating = Number(ratingValue);
-            const geekedValue = value("geeked").toLocaleLowerCase();
-            const geeked = ["true", "yes", "1"].includes(geekedValue);
-            if (geekedValue && !["true", "yes", "1", "false", "no", "0"].includes(geekedValue)) {
-              throw new Error(`Row ${line}: geeked must be true/false, yes/no, or 1/0.`);
-            }
-            if (!title) throw new Error(`Row ${line}: title is required.`);
-            if (!artists.length) throw new Error(`Row ${line}: at least one artist is required.`);
-            if (!album) throw new Error(`Row ${line}: album is required.`);
-            if (!lengthSeconds) throw new Error(`Row ${line}: length must use m:ss format, such as 4:17.`);
-            if (!ratingValue || !Number.isFinite(rating) || rating < 0 || rating > 10 || !Number.isInteger(rating * 2)) {
-              throw new Error(`Row ${line}: rating must be 0–10 in half-point increments.`);
-            }
-            return {
-              id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`,
-              title,
-              artist: artists.join(", "),
-              artists,
-              releaseType: "album",
-              album,
-              isPartOfAlbum: true,
-              lengthSeconds,
-              rating,
-              geeked,
-              createdAt: Date.now() - index
-            };
-          });
-          if (!window.confirm(`Add ${importedSongs.length} album tracks to your existing library?`)) return;
-          const previousSongs = songs;
-          songs = [...importedSongs, ...songs];
-          if (!saveSongs()) {
-            songs = previousSongs;
-            return;
-          }
-          songsPage = 1;
-          renderSongs();
-          renderStats();
-          renderRatingChart();
-          notice.textContent = `${importedSongs.length} album tracks imported.`;
-        } catch (error) {
-          console.error("Could not import album CSV.", error);
-          notice.textContent = error instanceof Error ? error.message : "That CSV file could not be imported.";
-        } finally {
-          albumCsvInput.value = "";
-        }
       });
       const importInput = document.querySelector("#import-library-input");
       document.querySelector("#import-library").addEventListener("click", () => importInput.click());

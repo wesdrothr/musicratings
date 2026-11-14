@@ -86,21 +86,17 @@ To copy an existing library to the website or another browser:
 Import replaces the library on the current browser. Sign in afterward to upload
 the imported library to Supabase and sync it with your other devices.
 
-Bulk import album tracks
+Bulk adding album or EP tracks
 
-1. In Your songs, click CSV template to download the column header template.
-2. Fill in one row per album track. Required columns are title, artists, album,
-   length, and rating. Length uses m:ss (for example 4:17); ratings are 0–10 in
-   half-point steps. The optional geeked column accepts true/false, yes/no, or
-   1/0.
-3. In the artists column, list multiple artists separated by commas and wrap
-   the entire cell in double quotes (for example, "Artist One, Artist Two").
-   Wrap album titles containing commas in double quotes too. Inside a quoted
-   field, write a literal double quote twice.
-4. Click Import albums and choose the completed CSV. The app validates every
-   row and asks for confirmation before adding tracks to the existing library.
-   This appends tracks; it does not replace existing songs.
-5. If signed in, the imported songs sync to Supabase after saving locally.
+1. In the Songs tab, click Add multiple album/EP tracks.
+2. Choose Album or EP, then enter the release name and artists once. Multiple
+   artists can be separated by commas.
+3. Enter each track's title, length (m:ss), and rating (0–10 in half-point
+   steps). Mark GEEKED for individual tracks as needed. Use Add another track
+   to create more rows.
+4. Click Add tracks and confirm. The tracks are added to the existing library;
+   they do not replace existing songs.
+5. If signed in, the new tracks sync to Supabase after saving locally.
 
 GitHub Pages email sign-in
 
