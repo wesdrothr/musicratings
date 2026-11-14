@@ -93,12 +93,13 @@
     .form-card { padding: 23px; }
     .card-heading { margin: 0; font-size: 17px; letter-spacing: -.025em; }
     .card-subheading { margin: 6px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
-    .bulk-entry-toggle { width: 100%; margin-top: 12px; }
     .bulk-track-list { display: grid; gap: 12px; margin: 18px 0; }
     .bulk-track-row { display: grid; grid-template-columns: minmax(0, 1fr) 100px 34px; align-items: end; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; }
     .bulk-track-row .field { min-width: 0; margin-bottom: 0; }
     .bulk-track-row label { font-size: 11px; }
     .bulk-track-row input { min-width: 0; padding: 9px; }
+    .bulk-track-featured-field { grid-column: 1 / 3; grid-row: 2; }
+    .bulk-track-row .bulk-track-remove { grid-column: 3; grid-row: 1; }
     .bulk-track-remove { min-height: 40px; border: 1px solid var(--border); border-radius: 9px; color: var(--danger); background: transparent; font-size: 16px; }
     .field { margin-bottom: 15px; }
     label { display: block; margin-bottom: 7px; color: #d7dce6; font-size: 12px; font-weight: 700; }
@@ -134,11 +135,12 @@
 
     .list-card { overflow: hidden; }
     .list-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 22px; border-bottom: 1px solid var(--border); }
-    .list-card .list-header { flex-wrap: wrap; }
     .list-header h2 { margin: 0; font-size: 16px; }
     .song-count { color: var(--muted); font-size: 12px; }
     .list-tools { display: flex; align-items: center; gap: 10px; }
-    .library-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; width: 100%; margin-left: 0; }
+    .library-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 22px; border-bottom: 1px solid var(--border); background: rgb(32 39 53 / 45%); }
+    .library-toolbar-label { color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+    .library-actions { display: flex; align-items: center; gap: 8px; }
     .library-actions button { min-height: 38px; }
     #import-library-input { display: none; }
     .library-search { width: min(260px, 35vw); min-height: 38px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); background: var(--panel-raised); font-size: 12px; }
@@ -222,18 +224,20 @@
       .bulk-track-row { grid-template-columns: minmax(0, 1fr) 78px 30px; gap: 6px; }
       .bulk-track-row input { padding: 8px 6px; font-size: 12px; }
       .bulk-track-row label { font-size: 10px; }
+      .bulk-track-featured-field { grid-column: 1 / 3; grid-row: 2; }
+      .bulk-track-row .bulk-track-remove { grid-column: 3; grid-row: 1; }
       .bulk-track-remove { min-height: 38px; }
       .stats-grid { gap: 9px; }
       .stat-card { min-height: 126px; padding: 16px; }
       .album-row { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 9px; padding: 13px 17px; }
       .leaderboard-rank { width: 36px; height: 36px; font-size: 12px; }
       .album-score { min-width: 68px; padding: 8px 8px; font-size: 16px; }
-      .list-header { padding: 17px; }
+      .list-header { flex-wrap: wrap; padding: 17px; }
       .list-header, .rating-search { align-items: stretch; }
-      .list-header { flex-wrap: wrap; }
       .list-tools { width: 100%; }
       .library-search { width: 100%; }
-      .library-actions { width: 100%; margin-left: 0; }
+      .library-toolbar { align-items: flex-start; flex-direction: column; gap: 8px; padding: 12px 17px; }
+      .library-actions { width: 100%; }
       .library-actions button { flex: 1; }
       td, th { padding-right: 12px; padding-left: 12px; }
       td:first-child, th:first-child { padding-left: 17px; }
@@ -270,14 +274,18 @@
         <section class="card form-card" id="song-entry-card">
           <form id="song-form">
           <h2 class="card-heading" id="form-heading">Add a song</h2>
-          <p class="card-subheading">Add a track to your collection and give it a rating.</p>
-          <div class="field">
+          <p class="card-subheading" id="form-subheading">Add a track to your collection and give it a rating.</p>
+          <div class="field" id="song-title-field">
             <label for="song-title">Song title</label>
             <input id="song-title" name="title" type="text" maxlength="120" placeholder="e.g. Dreams" required>
           </div>
           <div class="field">
             <label for="song-artist">Artists</label>
             <input id="song-artist" name="artist" type="text" maxlength="240" placeholder="e.g. Fleetwood Mac, Lindsey Buckingham" required>
+          </div>
+          <div class="field" id="featured-artists-field">
+            <label for="song-featured-artists">Featured artists (optional)</label>
+            <input id="song-featured-artists" name="featuredArtists" type="text" maxlength="240" placeholder="e.g. Lindsey Buckingham, Stevie Nicks">
           </div>
           <div class="field">
             <label for="release-type">Release type</label>
@@ -291,51 +299,29 @@
             <label for="album-title" id="release-name-label">Album / EP name</label>
             <input id="album-title" name="album" type="text" maxlength="120" placeholder="e.g. Rumours" required>
           </div>
-          <div class="field">
+          <div class="field" id="song-length-field">
             <label for="song-length">Length</label>
             <input id="song-length" name="length" type="text" inputmode="numeric" pattern="[0-9]{1,3}:[0-5][0-9]" placeholder="e.g. 4:17" aria-describedby="length-hint" required>
             <span class="field-hint" id="length-hint">Enter minutes and seconds (m:ss).</span>
           </div>
-          <div class="field">
+          <div class="field" id="song-rating-field">
             <label for="song-rating">Your rating</label>
             <input id="song-rating" name="rating" type="number" inputmode="decimal" min="0" max="10" step="0.5" placeholder="e.g. 8.5" aria-describedby="rating-hint" required>
             <span class="field-hint" id="rating-hint">Enter 0 as a placeholder, or a rating from 1 to 10; half points are allowed.</span>
           </div>
-          <div class="field checkbox-field">
+          <div class="field checkbox-field" id="song-geeked-field">
             <input id="song-geeked" name="geeked" type="checkbox">
             <label for="song-geeked">I was GEEKED</label>
+          </div>
+          <div id="bulk-track-section" hidden>
+            <p class="field-hint">Enter tracks in album order. They start unrated (0); you can edit ratings and GEEKED status later.</p>
+            <div class="bulk-track-list" id="bulk-track-list"></div>
+            <button class="secondary" id="add-bulk-track" type="button">Add another track</button>
           </div>
           <div class="form-actions">
             <button class="primary" id="submit-button" type="submit">Add song</button>
             <button class="secondary" id="cancel-edit" type="button" hidden>Cancel</button>
           </div>
-          </form>
-          <button class="secondary bulk-entry-toggle" id="show-bulk-entry" type="button">Add multiple album/EP tracks</button>
-          <form id="bulk-song-form" hidden>
-            <h2 class="card-heading">Add album or EP tracks</h2>
-            <p class="card-subheading">Enter the artist and release once, then add each track.</p>
-            <div class="field">
-              <label for="bulk-release-type">Release type</label>
-              <select id="bulk-release-type">
-                <option value="album">Album</option>
-                <option value="ep">EP</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="bulk-artist">Artists</label>
-              <input id="bulk-artist" type="text" maxlength="240" placeholder="e.g. Fleetwood Mac" required>
-            </div>
-            <div class="field">
-              <label for="bulk-release-name">Album / EP name</label>
-              <input id="bulk-release-name" type="text" maxlength="120" placeholder="e.g. Rumours" required>
-            </div>
-            <div class="bulk-track-list" id="bulk-track-list"></div>
-            <span class="field-hint">Tracks are added in the order entered, starting with the top row. New tracks start unrated (0).</span>
-            <button class="secondary" id="add-bulk-track" type="button">Add another track</button>
-            <div class="form-actions">
-              <button class="primary" type="submit">Add tracks</button>
-              <button class="secondary" id="cancel-bulk-entry" type="button">Cancel</button>
-            </div>
           </form>
           <p class="notice" id="form-notice" role="status" aria-live="polite"></p>
         </section>
@@ -347,6 +333,9 @@
               <input class="library-search" id="songs-search" type="search" placeholder="Search songs, artists, or releases">
               <span class="song-count" id="song-count">0 songs</span>
             </div>
+          </div>
+          <div class="library-toolbar">
+            <span class="library-toolbar-label">Library backup</span>
             <div class="library-actions">
               <button class="secondary" id="export-library" type="button">Export</button>
               <button class="secondary" id="import-library" type="button">Import JSON</button>
@@ -475,11 +464,11 @@
       const SUPABASE_URL = "https://pfqjgiagiagvvojiposd.supabase.co";
       const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3-CqXQLt8Zk_sHVkIetkLg_lsfwFvjA";
       const form = document.querySelector("#song-form");
-      const bulkForm = document.querySelector("#bulk-song-form");
       const bulkTrackList = document.querySelector("#bulk-track-list");
-      const showBulkEntryButton = document.querySelector("#show-bulk-entry");
+      const bulkTrackSection = document.querySelector("#bulk-track-section");
       const titleInput = document.querySelector("#song-title");
       const artistInput = document.querySelector("#song-artist");
+      const featuredArtistsInput = document.querySelector("#song-featured-artists");
       const albumInput = document.querySelector("#album-title");
       const releaseTypeInput = document.querySelector("#release-type");
       const releaseField = document.querySelector("#release-field");
@@ -494,6 +483,13 @@
       const artistDialogContent = document.querySelector("#artist-dialog-content");
       const list = document.querySelector("#song-list");
       const notice = document.querySelector("#form-notice");
+      const singleSongFields = [
+        document.querySelector("#song-title-field"),
+        document.querySelector("#featured-artists-field"),
+        document.querySelector("#song-length-field"),
+        document.querySelector("#song-rating-field"),
+        document.querySelector("#song-geeked-field")
+      ];
       const tabs = [...document.querySelectorAll('[role="tab"]')];
       let songs = loadSongs();
       let editingId = null;
@@ -614,6 +610,35 @@
         return names;
       }
 
+      function normalizeFeaturedArtists(song) {
+        const source = Array.isArray(song.featuredArtists)
+          ? song.featuredArtists
+          : (typeof song.featuredArtist === "string" ? song.featuredArtist.split(",") : []);
+        const primaryNames = new Set(normalizeArtists(song).map((name) => name.toLocaleLowerCase()));
+        const names = [];
+        const seen = new Set();
+        for (const value of source) {
+          const name = String(value || "").trim();
+          const key = name.toLocaleLowerCase();
+          if (name && !primaryNames.has(key) && !seen.has(key)) {
+            seen.add(key);
+            names.push(name);
+          }
+        }
+        return names;
+      }
+
+      function getCreditedArtists(song) {
+        const names = [...normalizeArtists(song), ...normalizeFeaturedArtists(song)];
+        return [...new Map(names.map((name) => [name.toLocaleLowerCase(), name])).values()];
+      }
+
+      function formatSongArtists(song) {
+        const artists = normalizeArtists(song).join(", ");
+        const featuredArtists = normalizeFeaturedArtists(song);
+        return [artists, featuredArtists.length ? `feat. ${featuredArtists.join(", ")}` : ""].filter(Boolean).join(" ");
+      }
+
       function loadSongs() {
         try {
           const currentData = localStorage.getItem(STORAGE_KEY);
@@ -652,6 +677,7 @@
             };
             normalized.artists = normalizeArtists(normalized);
             normalized.artist = normalized.artists.join(", ");
+            normalized.featuredArtists = normalizeFeaturedArtists(normalized);
             return normalized;
           });
           if (currentData === null) {
@@ -744,7 +770,7 @@
             if (!query) return true;
             return [
               song.title,
-              normalizeArtists(song).join(" "),
+              getCreditedArtists(song).join(" "),
               getReleaseName(song)
             ].some((value) => value.toLocaleLowerCase().includes(query));
           })
@@ -794,7 +820,7 @@
           title.textContent = song.title;
           const details = document.createElement("span");
           details.className = "album-name";
-          details.textContent = [(song.artists || normalizeArtists(song)).join(", "), getReleaseName(song), formatAddedDate(song.createdAt)].filter(Boolean).join(" · ");
+          details.textContent = [formatSongArtists(song), getReleaseName(song), formatAddedDate(song.createdAt)].filter(Boolean).join(" · ");
           titleCell.append(title, details);
           if (song.geeked) {
             const geekedTag = document.createElement("span");
@@ -895,7 +921,7 @@
         const artists = new Map();
         for (const song of songsToRate) {
           if (Number(song.rating) === 0) continue;
-          for (const name of normalizeArtists(song)) {
+          for (const name of getCreditedArtists(song)) {
             const key = name.toLocaleLowerCase();
             const artist = artists.get(key) || { name, ratings: [] };
             artist.ratings.push(song.rating);
@@ -940,7 +966,7 @@
         } else {
           for (const song of randomSongs) {
             const line = document.createElement("span");
-            const artists = normalizeArtists(song).join(", ");
+            const artists = formatSongArtists(song);
             line.textContent = artists ? `${song.title} — ${artists}` : song.title;
             tooltip.append(line);
           }
@@ -1277,7 +1303,7 @@
             title.textContent = song.title;
             const details = document.createElement("span");
             details.className = "album-name";
-            details.textContent = normalizeArtists(song).join(", ");
+            details.textContent = formatSongArtists(song);
             titleCell.append(title, details);
             if (song.geeked) {
               const geekedTag = document.createElement("span");
@@ -1304,7 +1330,7 @@
       function openArtistSongs(artistName) {
         const artistSongs = songs
           .filter((song) => Number(song.rating) > 0)
-          .filter((song) => normalizeArtists(song).some((name) => name.toLocaleLowerCase() === artistName.trim().toLocaleLowerCase()))
+          .filter((song) => getCreditedArtists(song).some((name) => name.toLocaleLowerCase() === artistName.trim().toLocaleLowerCase()))
           .sort((a, b) => b.rating - a.rating || a.title.localeCompare(b.title));
         artistDialogTitle.textContent = artistName;
         artistDialogSubtitle.textContent = `${artistSongs.length} ${artistSongs.length === 1 ? "song" : "songs"} · ranked by rating`;
@@ -1341,7 +1367,7 @@
             title.textContent = song.title;
             const details = document.createElement("span");
             details.className = "album-name";
-            details.textContent = getReleaseName(song);
+            details.textContent = [formatSongArtists(song), getReleaseName(song)].filter(Boolean).join(" · ");
             titleCell.append(title, details);
             if (song.geeked) {
               const geekedTag = document.createElement("span");
@@ -1378,12 +1404,12 @@
         const row = document.createElement("div");
         row.className = "bulk-track-row";
 
-        const addInputField = (labelText, type, attributes) => {
+        const addInputField = (labelText, type, idSuffix, attributes) => {
           const field = document.createElement("div");
           field.className = "field";
           const label = document.createElement("label");
           const input = document.createElement("input");
-          input.id = `bulk-track-${index}-${type}`;
+          input.id = `bulk-track-${index}-${idSuffix}`;
           label.htmlFor = input.id;
           label.textContent = labelText;
           input.type = type;
@@ -1393,14 +1419,26 @@
           return input;
         };
 
-        addInputField("Track title", "text", { maxlength: "120", placeholder: "Song title", required: "" });
-        const lengthInput = addInputField("Length", "text", {
+        addInputField("Track title", "text", "title", { maxlength: "120", placeholder: "Song title", required: "" });
+        const lengthInput = addInputField("Length", "text", "length", {
           inputmode: "numeric",
           pattern: "[0-9]{1,3}:[0-5][0-9]",
           placeholder: "3:45",
           required: ""
         });
         lengthInput.addEventListener("input", () => lengthInput.setCustomValidity(""));
+        const featuredField = document.createElement("div");
+        featuredField.className = "field bulk-track-featured-field";
+        const featuredLabel = document.createElement("label");
+        const featuredInput = document.createElement("input");
+        featuredInput.id = `bulk-track-${index}-featured-artists`;
+        featuredLabel.htmlFor = featuredInput.id;
+        featuredLabel.textContent = "Featured artists (optional)";
+        featuredInput.type = "text";
+        featuredInput.maxLength = 240;
+        featuredInput.placeholder = "e.g. Stevie Nicks";
+        featuredField.append(featuredLabel, featuredInput);
+        row.append(featuredField);
         const removeButton = document.createElement("button");
         removeButton.className = "bulk-track-remove";
         removeButton.type = "button";
@@ -1415,35 +1453,19 @@
         updateBulkTrackRemoveButtons();
       }
 
-      function closeBulkEntry() {
-        bulkForm.reset();
-        bulkTrackList.replaceChildren();
-        bulkTrackIndex = 0;
-        addBulkTrackRow();
-        bulkForm.hidden = true;
-        form.hidden = false;
-        showBulkEntryButton.hidden = false;
-      }
-
       function resetForm() {
         form.reset();
         editingId = null;
-        form.hidden = false;
-        bulkForm.hidden = true;
-        showBulkEntryButton.hidden = false;
-        document.querySelector("#form-heading").textContent = "Add a song";
-        document.querySelector("#submit-button").textContent = "Add song";
-        document.querySelector("#cancel-edit").hidden = true;
+        bulkTrackList.replaceChildren();
+        bulkTrackIndex = 0;
         updateReleaseField();
       }
 
       function beginEdit(song) {
-        form.hidden = false;
-        bulkForm.hidden = true;
-        showBulkEntryButton.hidden = false;
         editingId = song.id;
         titleInput.value = song.title;
         artistInput.value = normalizeArtists(song).join(", ");
+        featuredArtistsInput.value = normalizeFeaturedArtists(song).join(", ");
         releaseTypeInput.value = ["single", "album", "ep"].includes(song.releaseType)
           ? song.releaseType
           : (song.isPartOfAlbum ? "album" : "single");
@@ -1475,6 +1497,84 @@
 
       form.addEventListener("submit", (event) => {
         event.preventDefault();
+        if (releaseTypeInput.value !== "single" && !editingId) {
+          if (!artistInput.value.trim()) {
+            artistInput.setCustomValidity("Enter at least one artist name.");
+            artistInput.reportValidity();
+            artistInput.setCustomValidity("");
+            return;
+          }
+          if (!albumInput.value.trim()) {
+            albumInput.setCustomValidity(releaseTypeInput.value === "ep" ? "Enter an EP name." : "Enter an album name.");
+            albumInput.reportValidity();
+            albumInput.setCustomValidity("");
+            return;
+          }
+
+          const trackRows = [...bulkTrackList.querySelectorAll(".bulk-track-row")];
+          const trackData = [];
+          for (const [index, row] of trackRows.entries()) {
+            const trackTitle = row.querySelector('input[id$="-title"]');
+            const trackLength = row.querySelector('input[id$="-length"]');
+            const trackFeaturedArtists = row.querySelector('input[id$="-featured-artists"]');
+            const lengthSeconds = parseDuration(trackLength.value);
+            trackTitle.setCustomValidity(trackTitle.value.trim() ? "" : "Enter a song title.");
+            trackLength.setCustomValidity(lengthSeconds === null
+              ? "Enter a duration such as 4:17, with seconds from 00 to 59."
+              : "");
+            if (!trackTitle.checkValidity()) {
+              trackTitle.reportValidity();
+              return;
+            }
+            if (!trackLength.checkValidity()) {
+              trackLength.reportValidity();
+              return;
+            }
+            trackData.push({
+              title: trackTitle.value.trim(),
+              lengthSeconds,
+              featuredArtists: normalizeFeaturedArtists({
+                artists: normalizeArtists({ artist: artistInput.value }),
+                featuredArtists: trackFeaturedArtists.value.split(",")
+              }),
+              index
+            });
+          }
+
+          const artists = normalizeArtists({ artist: artistInput.value });
+          const releaseName = albumInput.value.trim();
+          const releaseType = releaseTypeInput.value;
+          const releaseLabel = releaseType === "ep" ? "EP" : "album";
+          const createdAt = Date.now();
+          const addedSongs = trackData.map((track) => ({
+            id: globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `${createdAt}-${track.index}-${Math.random()}`,
+            title: track.title,
+            artist: artists.join(", "),
+            artists,
+            featuredArtists: track.featuredArtists,
+            releaseType,
+            isPartOfAlbum: releaseType === "album",
+            album: releaseName,
+            lengthSeconds: track.lengthSeconds,
+            rating: 0,
+            geeked: false,
+            createdAt: createdAt - track.index
+          }));
+          const previousSongs = songs;
+          songs = [...addedSongs, ...songs];
+          if (!saveSongs()) {
+            songs = previousSongs;
+            return;
+          }
+          songsPage = 1;
+          resetForm();
+          renderSongs();
+          renderStats();
+          renderRatingChart();
+          notice.textContent = `${addedSongs.length} tracks added to ${releaseLabel} "${releaseName}".`;
+          return;
+        }
+
         const lengthSeconds = parseDuration(lengthInput.value);
         if (lengthSeconds === null) {
           lengthInput.setCustomValidity("Enter a duration such as 4:17, with seconds from 00 to 59.");
@@ -1502,12 +1602,17 @@
         }
 
         const artists = normalizeArtists({ artist: artistInput.value });
+        const featuredArtists = normalizeFeaturedArtists({
+          artists,
+          featuredArtists: featuredArtistsInput.value.split(",")
+        });
         const existingSong = editingId ? songs.find((item) => item.id === editingId) : null;
         const song = {
           id: editingId || (globalThis.crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`),
           title: titleInput.value.trim(),
           artist: artists.join(", "),
           artists,
+          featuredArtists,
           releaseType: releaseTypeInput.value,
           isPartOfAlbum: releaseTypeInput.value === "album",
           album: releaseTypeInput.value === "single" ? "" : albumInput.value.trim(),
@@ -1530,77 +1635,7 @@
         titleInput.focus();
       });
 
-      showBulkEntryButton.addEventListener("click", () => {
-        form.hidden = true;
-        bulkForm.hidden = false;
-        showBulkEntryButton.hidden = true;
-        notice.textContent = "";
-        if (bulkTrackList.children.length === 0) addBulkTrackRow();
-        document.querySelector("#bulk-artist").focus();
-      });
       document.querySelector("#add-bulk-track").addEventListener("click", () => addBulkTrackRow());
-      document.querySelector("#cancel-bulk-entry").addEventListener("click", () => {
-        closeBulkEntry();
-        notice.textContent = "";
-      });
-      bulkForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const releaseType = document.querySelector("#bulk-release-type").value;
-        const artistInput = document.querySelector("#bulk-artist");
-        const releaseNameInput = document.querySelector("#bulk-release-name");
-        const artists = normalizeArtists({ artist: artistInput.value });
-        const releaseName = releaseNameInput.value.trim();
-        const trackRows = [...bulkTrackList.querySelectorAll(".bulk-track-row")];
-        const trackData = [];
-
-        for (const [index, row] of trackRows.entries()) {
-          const inputs = row.querySelectorAll("input");
-          const [trackTitle, lengthInput] = inputs;
-          const lengthSeconds = parseDuration(lengthInput.value);
-          lengthInput.setCustomValidity(lengthSeconds === null
-            ? "Enter a duration such as 4:17, with seconds from 00 to 59."
-            : "");
-          if (!lengthInput.checkValidity()) {
-            lengthInput.reportValidity();
-            return;
-          }
-          trackData.push({
-            title: trackTitle.value.trim(),
-            lengthSeconds,
-            index
-          });
-        }
-
-        const releaseLabel = releaseType === "ep" ? "EP" : "album";
-        if (!window.confirm(`Add ${trackData.length} tracks to ${releaseLabel} "${releaseName}"?`)) return;
-        const createdAt = Date.now();
-        const addedSongs = trackData.map((track) => ({
-          id: globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `${createdAt}-${track.index}-${Math.random()}`,
-          title: track.title,
-          artist: artists.join(", "),
-          artists,
-          releaseType,
-          isPartOfAlbum: releaseType === "album",
-          album: releaseName,
-          lengthSeconds: track.lengthSeconds,
-          rating: 0,
-          geeked: false,
-          createdAt: createdAt - track.index
-        }));
-        const previousSongs = songs;
-        songs = [...addedSongs, ...songs];
-        if (!saveSongs()) {
-          songs = previousSongs;
-          return;
-        }
-        songsPage = 1;
-        closeBulkEntry();
-        renderSongs();
-        renderStats();
-        renderRatingChart();
-        notice.textContent = `${addedSongs.length} tracks added to ${releaseLabel} "${releaseName}".`;
-      });
-
       document.querySelector("#cancel-edit").addEventListener("click", () => {
         resetForm();
         notice.textContent = "";
@@ -1669,6 +1704,7 @@
               title: String(song.title || "").trim(),
               artist: artists.join(", "),
               artists,
+              featuredArtists: normalizeFeaturedArtists(song),
               releaseType,
               album: releaseType === "single" ? "" : String(song.album || "").trim(),
               isPartOfAlbum: releaseType === "album",
@@ -1774,11 +1810,41 @@
       albumInput.addEventListener("input", () => albumInput.setCustomValidity(""));
       function updateReleaseField() {
         const type = releaseTypeInput.value;
+        const isBulkEntry = type !== "single" && !editingId;
+        const isEditing = Boolean(editingId);
         releaseField.hidden = type === "single";
         albumInput.required = type !== "single";
         releaseNameLabel.textContent = type === "ep" ? "EP name" : "Album";
         albumInput.placeholder = type === "ep" ? "e.g. Blue Banisters" : "e.g. Rumours";
         if (type === "single") albumInput.setCustomValidity("");
+        for (const field of singleSongFields) field.hidden = isBulkEntry;
+        titleInput.required = !isBulkEntry;
+        lengthInput.required = !isBulkEntry;
+        ratingInput.required = !isBulkEntry;
+        titleInput.disabled = isBulkEntry;
+        lengthInput.disabled = isBulkEntry;
+        ratingInput.disabled = isBulkEntry;
+        geekedInput.disabled = isBulkEntry;
+        featuredArtistsInput.disabled = isBulkEntry;
+        bulkTrackSection.hidden = !isBulkEntry;
+        for (const input of bulkTrackList.querySelectorAll("input")) input.disabled = !isBulkEntry;
+        document.querySelector("#form-heading").textContent = isEditing
+          ? "Edit a song"
+          : isBulkEntry
+          ? `Add ${type === "ep" ? "EP" : "album"} tracks`
+          : "Add a song";
+        document.querySelector("#form-subheading").textContent = isEditing
+          ? "Update this song's details."
+          : isBulkEntry
+          ? `Enter the ${type === "ep" ? "EP" : "album"} artist and name once, then add each track in order.`
+          : "Add a track to your collection and give it a rating.";
+        document.querySelector("#submit-button").textContent = isEditing
+          ? "Save changes"
+          : isBulkEntry
+          ? "Add tracks"
+          : "Add song";
+        document.querySelector("#cancel-edit").hidden = !isEditing && !isBulkEntry;
+        if (isBulkEntry && bulkTrackList.children.length === 0) addBulkTrackRow();
       }
       releaseTypeInput.addEventListener("change", updateReleaseField);
       updateReleaseField();
