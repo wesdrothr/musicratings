@@ -95,7 +95,7 @@
     .card-subheading { margin: 6px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
     .bulk-entry-toggle { width: 100%; margin-top: 12px; }
     .bulk-track-list { display: grid; gap: 12px; margin: 18px 0; }
-    .bulk-track-row { display: grid; grid-template-columns: minmax(60px, 1fr) 68px 62px 50px 28px; align-items: end; gap: 6px; border-top: 1px solid var(--border); padding-top: 12px; }
+    .bulk-track-row { display: grid; grid-template-columns: minmax(0, 1fr) 100px 34px; align-items: end; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; }
     .bulk-track-row .field { min-width: 0; margin-bottom: 0; }
     .bulk-track-row label { font-size: 11px; }
     .bulk-track-row input { min-width: 0; padding: 9px; }
@@ -219,13 +219,10 @@
     @media (max-width: 520px) {
       .shell { width: min(100% - 28px, 1120px); padding-top: 28px; }
       .form-card { padding: 19px; }
-      .bulk-track-row { grid-template-columns: minmax(0, 1fr) 68px 64px 30px; gap: 6px; }
+      .bulk-track-row { grid-template-columns: minmax(0, 1fr) 78px 30px; gap: 6px; }
       .bulk-track-row input { padding: 8px 6px; font-size: 12px; }
       .bulk-track-row label { font-size: 10px; }
-      .bulk-track-row .checkbox-field { grid-column: 1 / 4; grid-row: 2; display: flex; justify-items: initial; gap: 8px; }
-      .bulk-track-row .checkbox-field label { margin: 0; }
-      .bulk-track-row .checkbox-field input { width: 18px; height: 18px; min-height: 18px; padding: 0; }
-      .bulk-track-remove { grid-column: 4; grid-row: 2; }
+      .bulk-track-remove { min-height: 38px; }
       .stats-grid { gap: 9px; }
       .stat-card { min-height: 126px; padding: 16px; }
       .album-row { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 9px; padding: 13px 17px; }
@@ -333,6 +330,7 @@
               <input id="bulk-release-name" type="text" maxlength="120" placeholder="e.g. Rumours" required>
             </div>
             <div class="bulk-track-list" id="bulk-track-list"></div>
+            <span class="field-hint">Tracks are added in the order entered, starting with the top row. New tracks start unrated (0).</span>
             <button class="secondary" id="add-bulk-track" type="button">Add another track</button>
             <div class="form-actions">
               <button class="primary" type="submit">Add tracks</button>
@@ -1403,26 +1401,6 @@
           required: ""
         });
         lengthInput.addEventListener("input", () => lengthInput.setCustomValidity(""));
-        addInputField("Rating", "number", {
-          inputmode: "decimal",
-          min: "0",
-          max: "10",
-          step: "0.5",
-          placeholder: "8.5",
-          required: ""
-        });
-
-        const geekedField = document.createElement("div");
-        geekedField.className = "field checkbox-field";
-        const geekedInput = document.createElement("input");
-        geekedInput.id = `bulk-track-${index}-geeked`;
-        geekedInput.type = "checkbox";
-        const geekedLabel = document.createElement("label");
-        geekedLabel.htmlFor = geekedInput.id;
-        geekedLabel.textContent = "GEEKED";
-        geekedField.append(geekedInput, geekedLabel);
-        row.append(geekedField);
-
         const removeButton = document.createElement("button");
         removeButton.className = "bulk-track-remove";
         removeButton.type = "button";
@@ -1577,7 +1555,7 @@
 
         for (const [index, row] of trackRows.entries()) {
           const inputs = row.querySelectorAll("input");
-          const [trackTitle, lengthInput, ratingInput, geekedInput] = inputs;
+          const [trackTitle, lengthInput] = inputs;
           const lengthSeconds = parseDuration(lengthInput.value);
           lengthInput.setCustomValidity(lengthSeconds === null
             ? "Enter a duration such as 4:17, with seconds from 00 to 59."
@@ -1589,8 +1567,6 @@
           trackData.push({
             title: trackTitle.value.trim(),
             lengthSeconds,
-            rating: Number(ratingInput.value),
-            geeked: geekedInput.checked,
             index
           });
         }
@@ -1607,8 +1583,8 @@
           isPartOfAlbum: releaseType === "album",
           album: releaseName,
           lengthSeconds: track.lengthSeconds,
-          rating: track.rating,
-          geeked: track.geeked,
+          rating: 0,
+          geeked: false,
           createdAt: createdAt - track.index
         }));
         const previousSongs = songs;

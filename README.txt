@@ -91,11 +91,12 @@ Bulk adding album or EP tracks
 1. In the Songs tab, click Add multiple album/EP tracks.
 2. Choose Album or EP, then enter the release name and artists once. Multiple
    artists can be separated by commas.
-3. Enter each track's title, length (m:ss), and rating (0–10 in half-point
-   steps). Mark GEEKED for individual tracks as needed. Use Add another track
-   to create more rows.
+3. Enter each track's title and length (m:ss), then use Add another track to
+   create more rows. Bulk-added tracks start with rating 0 and GEEKED off; edit
+   any track later to add a rating or mark it GEEKED.
 4. Click Add tracks and confirm. The tracks are added to the existing library;
-   they do not replace existing songs.
+   the top row is added first, followed by each row below it. They do not
+   replace existing songs.
 5. If signed in, the new tracks sync to Supabase after saving locally.
 
 GitHub Pages email sign-in
