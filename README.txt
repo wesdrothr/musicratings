@@ -35,13 +35,14 @@ only songs marked GEEKED. Artist ratings include every artist on each song.
 Album, EP, and artist rating lists show 20 entries per page and include their
 own search boxes for finding a certain release or artist quickly.
 Each Album, EP, and Artist entry also shows its ranking number beside the name.
-Searching does not change these ranking numbers; the rank reflects the original
-sorted rating list.
+Searching or filtering does not change album or EP ranking numbers; those ranks
+reflect the original sorted rating lists. Artist ranks are recalculated from
+the artists currently shown after searching or applying the Min. songs filter.
 In Artist ratings, click an artist name to open a ranked list of all songs by
 that artist, including songs where the artist is featured with other artists.
 Use Min. songs in Artist ratings to hide artists with fewer than the selected
 number of rated songs. Searching or filtering does not change the displayed
-leaderboard ranks.
+album or EP leaderboard ranks; artist ranks adjust to the filtered results.
 In Album ratings or EP ratings, click a release name to open its songs in input
 order, without ranking them by rating. Clicked lists respect the GEEKED filter.
 The Ratings tab shows a graph of how many songs have each rating from 1 to 10,

@@ -1243,7 +1243,7 @@
             row.className = "album-row";
             const rank = document.createElement("span");
             rank.className = "leaderboard-rank";
-            rank.textContent = String(artists.indexOf(artist) + 1);
+            rank.textContent = String(filteredArtists.indexOf(artist) + 1);
             const info = document.createElement("div");
             const title = document.createElement("div");
             title.className = "album-row-title";
