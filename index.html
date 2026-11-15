@@ -193,6 +193,9 @@
       .rating-chart-bar { animation: none !important; }
     }
     .albums-card .list-header { border: 0; }
+    .artist-rating-filters { display: flex; align-items: center; gap: 8px; }
+    .artist-rating-filters label { flex: 0 0 auto; margin: 0; color: var(--muted); font-size: 11px; }
+    #artist-min-songs { width: 76px; min-height: 38px; padding: 8px; font-size: 12px; }
     .album-row { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 15px 22px; border-top: 1px solid rgb(48 57 74 / 70%); }
     .album-row-title { font-size: 13px; font-weight: 700; }
     .album-row-count { margin-top: 4px; color: var(--muted); font-size: 11px; }
@@ -236,6 +239,8 @@
       .list-header, .rating-search { align-items: stretch; }
       .list-tools { width: 100%; }
       .library-search { width: 100%; }
+      .artist-rating-filters { width: 100%; flex-wrap: wrap; }
+      .artist-rating-filters .rating-search { flex: 1; min-width: 120px; }
       .library-toolbar { align-items: flex-start; flex-direction: column; gap: 8px; padding: 12px 17px; }
       .library-actions { width: 100%; }
       .library-actions button { flex: 1; }
@@ -402,7 +407,11 @@
       <section class="card albums-card artist-ratings-card" aria-labelledby="artist-breakdown-heading">
         <div class="list-header">
           <h2 id="artist-breakdown-heading">Artist ratings</h2>
-          <input class="library-search rating-search" id="artist-search" type="search" placeholder="Search artists">
+          <div class="artist-rating-filters">
+            <label for="artist-min-songs">Min. songs</label>
+            <input id="artist-min-songs" type="number" min="1" step="1" value="1" inputmode="numeric">
+            <input class="library-search rating-search" id="artist-search" type="search" placeholder="Search artists" aria-label="Search artists">
+          </div>
         </div>
         <div id="artist-breakdown"></div>
       </section>
@@ -500,6 +509,7 @@
       const albumSearch = document.querySelector("#album-search");
       const epSearch = document.querySelector("#ep-search");
       const artistSearch = document.querySelector("#artist-search");
+      const artistMinSongs = document.querySelector("#artist-min-songs");
       const ratingPages = {
         album: { page: 1 },
         ep: { page: 1 },
@@ -1102,6 +1112,7 @@
         const albumQuery = albumSearch.value.trim().toLocaleLowerCase();
         const epQuery = epSearch.value.trim().toLocaleLowerCase();
         const artistQuery = artistSearch.value.trim().toLocaleLowerCase();
+        const minimumArtistSongs = Math.max(1, Number.parseInt(artistMinSongs.value, 10) || 1);
         const filteredAlbums = albums.filter((album) =>
           `${album.artist} ${album.name}`.toLocaleLowerCase().includes(albumQuery)
         );
@@ -1109,6 +1120,7 @@
           `${ep.artist} ${ep.name}`.toLocaleLowerCase().includes(epQuery)
         );
         const filteredArtists = artists.filter((artist) =>
+          artist.ratings.length >= minimumArtistSongs &&
           artist.name.toLocaleLowerCase().includes(artistQuery)
         );
         const averageSong = ratedStatsSongs.length ? ratedStatsSongs.reduce((sum, song) => sum + song.rating, 0) / ratedStatsSongs.length : null;
@@ -1218,6 +1230,8 @@
           empty.className = "empty";
           empty.textContent = artistQuery
             ? "No artists match your search."
+            : minimumArtistSongs > 1
+            ? `No artists have ${minimumArtistSongs} or more rated songs.`
             : geekedFilter.checked
             ? "No GEEKED songs are available for artist ratings."
             : "Artist ratings will show here once you add songs with artist names.";
@@ -1668,6 +1682,10 @@
         renderStats();
       });
       artistSearch.addEventListener("input", () => {
+        ratingPages.artist.page = 1;
+        renderStats();
+      });
+      artistMinSongs.addEventListener("input", () => {
         ratingPages.artist.page = 1;
         renderStats();
       });

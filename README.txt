@@ -39,6 +39,9 @@ Searching does not change these ranking numbers; the rank reflects the original
 sorted rating list.
 In Artist ratings, click an artist name to open a ranked list of all songs by
 that artist, including songs where the artist is featured with other artists.
+Use Min. songs in Artist ratings to hide artists with fewer than the selected
+number of rated songs. Searching or filtering does not change the displayed
+leaderboard ranks.
 In Album ratings or EP ratings, click a release name to open its songs in input
 order, without ranking them by rating. Clicked lists respect the GEEKED filter.
 The Ratings tab shows a graph of how many songs have each rating from 1 to 10,
