@@ -30,7 +30,8 @@ selected calendar month; it opens to the current month and lets you choose
 another month. It also shows Album, EP, and Artist rating leaderboards calculated
 only from rated songs added during that month. These lists have separate searches,
 pagination, and artist minimum-song filtering; clicking a name shows that month's
-songs only.
+songs only. The recap also lists every song rated 10 that was added during the
+selected month.
 Album and EP statistics are tracked separately in their own average ratings
 and breakdowns. Album and EP groupings use the main artists only. Featured
 artists are included in each featured artist's average and ranked song list.

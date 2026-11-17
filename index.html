@@ -487,6 +487,13 @@
         </div>
         <div id="monthly-artist-breakdown"></div>
       </section>
+      <section class="card albums-card" aria-labelledby="monthly-perfect-songs-heading">
+        <div class="list-header">
+          <h2 id="monthly-perfect-songs-heading">SONGS RATED A 10</h2>
+          <span class="song-count" id="monthly-perfect-song-count">0 songs</span>
+        </div>
+        <div id="monthly-perfect-songs"></div>
+      </section>
     </section>
 
     <section class="panel" id="ratings-panel" role="tabpanel" aria-labelledby="ratings-tab" hidden>
@@ -1433,6 +1440,67 @@
           monthSongs,
           minimumMonthlyArtistSongs
         );
+        renderMonthlyPerfectSongs(monthSongs);
+      }
+
+      function renderMonthlyPerfectSongs(monthSongs) {
+        const container = document.querySelector("#monthly-perfect-songs");
+        const perfectSongs = monthSongs
+          .filter((song) => Number(song.rating) === 10)
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        document.querySelector("#monthly-perfect-song-count").textContent =
+          `${perfectSongs.length} ${perfectSongs.length === 1 ? "song" : "songs"}`;
+        container.replaceChildren();
+
+        if (perfectSongs.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "No songs rated 10 were added this month.";
+          container.append(empty);
+          return;
+        }
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "table-wrap";
+        const table = document.createElement("table");
+        const caption = document.createElement("caption");
+        caption.className = "sr-only";
+        caption.textContent = "Songs rated 10 added during the selected month";
+        const head = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        for (const label of ["Song", "Length", "Rating"]) {
+          const heading = document.createElement("th");
+          heading.scope = "col";
+          heading.textContent = label;
+          headerRow.append(heading);
+        }
+        head.append(headerRow);
+        const body = document.createElement("tbody");
+
+        for (const song of perfectSongs) {
+          const row = document.createElement("tr");
+          const titleCell = document.createElement("td");
+          const title = document.createElement("span");
+          title.className = "song-name";
+          title.textContent = song.title;
+          const details = document.createElement("span");
+          details.className = "album-name";
+          details.textContent = [
+            formatSongArtists(song),
+            getReleaseName(song),
+            formatAddedDate(song.createdAt)
+          ].filter(Boolean).join(" · ");
+          titleCell.append(title, details);
+          row.append(titleCell, makeCell(formatDuration(song.lengthSeconds)));
+          const rating = makeCell(formatRating(song.rating));
+          rating.className = "rating";
+          row.append(rating);
+          body.append(row);
+        }
+
+        table.append(caption, head, body);
+        wrapper.append(table);
+        container.append(wrapper);
       }
 
       function renderMonthlyRatingList(type, container, items, pageState, query, monthSongs, minimumArtistSongs = 1) {
