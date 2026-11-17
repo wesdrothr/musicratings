@@ -462,6 +462,31 @@
           <p class="stat-detail">Combined song length</p>
         </article>
       </div>
+      <section class="card albums-card" aria-labelledby="monthly-album-breakdown-heading">
+        <div class="list-header">
+          <h2 id="monthly-album-breakdown-heading">Album ratings</h2>
+          <input class="library-search rating-search" id="monthly-album-search" type="search" placeholder="Search albums">
+        </div>
+        <div id="monthly-album-breakdown"></div>
+      </section>
+      <section class="card albums-card" aria-labelledby="monthly-ep-breakdown-heading">
+        <div class="list-header">
+          <h2 id="monthly-ep-breakdown-heading">EP ratings</h2>
+          <input class="library-search rating-search" id="monthly-ep-search" type="search" placeholder="Search EPs">
+        </div>
+        <div id="monthly-ep-breakdown"></div>
+      </section>
+      <section class="card albums-card artist-ratings-card" aria-labelledby="monthly-artist-breakdown-heading">
+        <div class="list-header">
+          <h2 id="monthly-artist-breakdown-heading">Artist ratings</h2>
+          <div class="artist-rating-filters">
+            <label for="monthly-artist-min-songs">Min. songs</label>
+            <input id="monthly-artist-min-songs" type="number" min="1" step="1" value="1" inputmode="numeric">
+            <input class="library-search rating-search" id="monthly-artist-search" type="search" placeholder="Search artists" aria-label="Search monthly artists">
+          </div>
+        </div>
+        <div id="monthly-artist-breakdown"></div>
+      </section>
     </section>
 
     <section class="panel" id="ratings-panel" role="tabpanel" aria-labelledby="ratings-tab" hidden>
@@ -558,12 +583,19 @@
       const artistSearch = document.querySelector("#artist-search");
       const artistMinSongs = document.querySelector("#artist-min-songs");
       const monthlyRecapMonth = document.querySelector("#monthly-recap-month");
+      const monthlyAlbumSearch = document.querySelector("#monthly-album-search");
+      const monthlyEPSearch = document.querySelector("#monthly-ep-search");
+      const monthlyArtistSearch = document.querySelector("#monthly-artist-search");
+      const monthlyArtistMinSongs = document.querySelector("#monthly-artist-min-songs");
       const today = new Date();
       monthlyRecapMonth.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
       const ratingPages = {
         album: { page: 1 },
         ep: { page: 1 },
-        artist: { page: 1 }
+        artist: { page: 1 },
+        monthlyAlbum: { page: 1 },
+        monthlyEP: { page: 1 },
+        monthlyArtist: { page: 1 }
       };
       const accountButton = document.querySelector("#account-button");
       const accountDialog = document.querySelector("#account-dialog");
@@ -1122,7 +1154,7 @@
         };
       }
 
-      function appendRatingPagination(container, items, pageState, label) {
+      function appendRatingPagination(container, items, pageState, label, onChange = renderStats) {
         const { totalPages, pageStart, pageItems } = getRatingPage(items, pageState);
         const pagination = document.createElement("div");
         pagination.className = "pagination";
@@ -1133,7 +1165,7 @@
         previous.disabled = pageState.page === 1;
         previous.addEventListener("click", () => {
           pageState.page -= 1;
-          renderStats();
+          onChange();
         });
         const info = document.createElement("span");
         info.className = "pagination-info";
@@ -1147,7 +1179,7 @@
         next.disabled = pageState.page === totalPages;
         next.addEventListener("click", () => {
           pageState.page += 1;
-          renderStats();
+          onChange();
         });
         pagination.append(previous, info, next);
         container.append(pagination);
@@ -1361,15 +1393,108 @@
         document.querySelector("#monthly-release-count").textContent =
           `Across ${albums.length} ${albums.length === 1 ? "album" : "albums"}, ${eps.length} EP${eps.length === 1 ? "" : "s"}, and ${singles} ${singles === 1 ? "single" : "singles"}`;
         document.querySelector("#monthly-total-length").textContent = formatTotalDuration(totalSeconds);
+
+        const monthlyAlbumQuery = monthlyAlbumSearch.value.trim().toLocaleLowerCase();
+        const monthlyEPQuery = monthlyEPSearch.value.trim().toLocaleLowerCase();
+        const monthlyArtistQuery = monthlyArtistSearch.value.trim().toLocaleLowerCase();
+        const minimumMonthlyArtistSongs = Math.max(1, Number.parseInt(monthlyArtistMinSongs.value, 10) || 1);
+        const monthlyAlbumItems = albums.filter((album) =>
+          `${album.artist} ${album.name}`.toLocaleLowerCase().includes(monthlyAlbumQuery)
+        );
+        const monthlyEPItems = eps.filter((ep) =>
+          `${ep.artist} ${ep.name}`.toLocaleLowerCase().includes(monthlyEPQuery)
+        );
+        const monthlyArtistItems = artists.filter((artist) =>
+          artist.ratings.length >= minimumMonthlyArtistSongs &&
+          artist.name.toLocaleLowerCase().includes(monthlyArtistQuery)
+        );
+        renderMonthlyRatingList(
+          "album",
+          document.querySelector("#monthly-album-breakdown"),
+          monthlyAlbumItems,
+          ratingPages.monthlyAlbum,
+          monthlyAlbumQuery,
+          monthSongs
+        );
+        renderMonthlyRatingList(
+          "EP",
+          document.querySelector("#monthly-ep-breakdown"),
+          monthlyEPItems,
+          ratingPages.monthlyEP,
+          monthlyEPQuery,
+          monthSongs
+        );
+        renderMonthlyRatingList(
+          "artist",
+          document.querySelector("#monthly-artist-breakdown"),
+          monthlyArtistItems,
+          ratingPages.monthlyArtist,
+          monthlyArtistQuery,
+          monthSongs,
+          minimumMonthlyArtistSongs
+        );
       }
 
-      function openReleaseSongs(releaseType, releaseName, artistName) {
-        const releaseSongs = songs
+      function renderMonthlyRatingList(type, container, items, pageState, query, monthSongs, minimumArtistSongs = 1) {
+        container.replaceChildren();
+        if (items.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = query
+            ? `No ${type === "EP" ? "EPs" : `${type}s`} match your search.`
+            : type === "artist" && minimumArtistSongs > 1
+            ? `No artists have ${minimumArtistSongs} or more rated songs this month.`
+            : `No ${type === "EP" ? "EP" : type} ratings for this month.`;
+          container.append(empty);
+        } else {
+          const page = getRatingPage(items, pageState);
+          for (const [pageIndex, item] of page.pageItems.entries()) {
+            const row = document.createElement("div");
+            row.className = "album-row";
+            const rank = document.createElement("span");
+            rank.className = "leaderboard-rank";
+            rank.textContent = String(page.pageStart + pageIndex + 1);
+            const info = document.createElement("div");
+            const title = document.createElement("div");
+            title.className = "album-row-title";
+            const nameButton = document.createElement("button");
+            nameButton.className = "artist-link";
+            nameButton.type = "button";
+            if (type === "artist") {
+              nameButton.textContent = item.name;
+              nameButton.setAttribute("aria-label", `View this month's ranked songs by ${item.name}`);
+              nameButton.addEventListener("click", () => openArtistSongs(item.name, monthSongs));
+            } else {
+              nameButton.textContent = `${item.artist} · ${item.name}`;
+              nameButton.setAttribute("aria-label", `View this month's songs in ${type} ${item.name}`);
+              nameButton.addEventListener("click", () =>
+                openReleaseSongs(type === "EP" ? "ep" : "album", item.name, item.artist, monthSongs, false)
+              );
+            }
+            title.append(nameButton);
+            const count = document.createElement("div");
+            count.className = "album-row-count";
+            const songCount = type === "artist" ? item.ratings.length : item.songs;
+            count.textContent = `${songCount} ${songCount === 1 ? "song" : "songs"}`;
+            info.append(title, count);
+            const score = document.createElement("span");
+            score.className = "album-score";
+            score.textContent = formatAverageRating(item.average);
+            row.append(rank, info, score);
+            container.append(row);
+          }
+        }
+        const label = type === "EP" ? "EPs" : `${type}s`;
+        appendRatingPagination(container, items, pageState, label, renderMonthlyRecap);
+      }
+
+      function openReleaseSongs(releaseType, releaseName, artistName, songSource = songs, applyGeekedFilter = true) {
+        const releaseSongs = songSource
           .filter((song) => Number(song.rating) > 0)
           .filter((song) => song.releaseType === releaseType)
           .filter((song) => song.album.trim().toLocaleLowerCase() === releaseName.trim().toLocaleLowerCase())
           .filter((song) => {
-            if (!geekedFilter.checked) return true;
+            if (!applyGeekedFilter || !geekedFilter.checked) return true;
             return song.geeked;
           })
           .filter((song) => {
@@ -1436,8 +1561,8 @@
         document.querySelector("#close-artist-dialog").focus();
       }
 
-      function openArtistSongs(artistName) {
-        const artistSongs = songs
+      function openArtistSongs(artistName, songSource = songs) {
+        const artistSongs = songSource
           .filter((song) => Number(song.rating) > 0)
           .filter((song) => getCreditedArtists(song).some((name) => name.toLocaleLowerCase() === artistName.trim().toLocaleLowerCase()))
           .sort((a, b) => b.rating - a.rating || a.title.localeCompare(b.title));
@@ -1785,7 +1910,28 @@
         ratingPages.artist.page = 1;
         renderStats();
       });
-      monthlyRecapMonth.addEventListener("input", renderMonthlyRecap);
+      monthlyRecapMonth.addEventListener("input", () => {
+        ratingPages.monthlyAlbum.page = 1;
+        ratingPages.monthlyEP.page = 1;
+        ratingPages.monthlyArtist.page = 1;
+        renderMonthlyRecap();
+      });
+      monthlyAlbumSearch.addEventListener("input", () => {
+        ratingPages.monthlyAlbum.page = 1;
+        renderMonthlyRecap();
+      });
+      monthlyEPSearch.addEventListener("input", () => {
+        ratingPages.monthlyEP.page = 1;
+        renderMonthlyRecap();
+      });
+      monthlyArtistSearch.addEventListener("input", () => {
+        ratingPages.monthlyArtist.page = 1;
+        renderMonthlyRecap();
+      });
+      monthlyArtistMinSongs.addEventListener("input", () => {
+        ratingPages.monthlyArtist.page = 1;
+        renderMonthlyRecap();
+      });
       document.querySelector("#export-library").addEventListener("click", () => {
         const data = JSON.stringify({ version: 6, songs }, null, 2);
         const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));

@@ -27,7 +27,10 @@ The Stats tab also includes an overall average artist rating, where each artist'
 individual average counts equally.
 The Monthly Recap tab shows these six summary stats for songs added during the
 selected calendar month; it opens to the current month and lets you choose
-another month.
+another month. It also shows Album, EP, and Artist rating leaderboards calculated
+only from rated songs added during that month. These lists have separate searches,
+pagination, and artist minimum-song filtering; clicking a name shows that month's
+songs only.
 Album and EP statistics are tracked separately in their own average ratings
 and breakdowns. Album and EP groupings use the main artists only. Featured
 artists are included in each featured artist's average and ranked song list.
