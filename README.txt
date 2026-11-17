@@ -25,6 +25,9 @@ album, or part of an EP. When an album or EP is selected, enter its name. Use th
 combined listening time, album ratings, EP ratings, singles count, and artist ratings.
 The Stats tab also includes an overall average artist rating, where each artist's
 individual average counts equally.
+The Monthly Recap tab shows these six summary stats for songs added during the
+selected calendar month; it opens to the current month and lets you choose
+another month.
 Album and EP statistics are tracked separately in their own average ratings
 and breakdowns. Album and EP groupings use the main artists only. Featured
 artists are included in each featured artist's average and ranked song list.

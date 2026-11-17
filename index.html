@@ -167,6 +167,8 @@
     .pagination-info { min-width: 120px; color: var(--muted); font-size: 12px; text-align: center; }
 
     .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .month-picker { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--muted); }
+    .month-picker input { width: auto; min-width: 155px; }
     .stat-card { min-height: 142px; padding: 21px; }
     .stat-label { margin: 0; color: var(--muted); font-size: 12px; font-weight: 650; }
     .stat-value { margin: 18px 0 0; font-size: clamp(25px, 3vw, 34px); font-weight: 800; letter-spacing: -.055em; }
@@ -271,6 +273,7 @@
     <nav class="tabs" role="tablist" aria-label="Music library views">
       <button class="tab" id="songs-tab" type="button" role="tab" aria-selected="true" aria-controls="songs-panel">Songs</button>
       <button class="tab" id="stats-tab" type="button" role="tab" aria-selected="false" aria-controls="stats-panel">Stats</button>
+      <button class="tab" id="monthly-recap-tab" type="button" role="tab" aria-selected="false" aria-controls="monthly-recap-panel">Monthly Recap</button>
       <button class="tab" id="ratings-tab" type="button" role="tab" aria-selected="false" aria-controls="ratings-panel">Ratings</button>
     </nav>
 
@@ -417,6 +420,50 @@
       </section>
     </section>
 
+    <section class="panel" id="monthly-recap-panel" role="tabpanel" aria-labelledby="monthly-recap-tab" hidden>
+      <div class="card list-header">
+        <div>
+          <h2>Monthly Recap</h2>
+          <p class="stat-detail">Based on songs added during the selected month.</p>
+        </div>
+        <label class="month-picker" for="monthly-recap-month">
+          Month
+          <input id="monthly-recap-month" type="month">
+        </label>
+      </div>
+      <div class="stats-grid">
+        <article class="card stat-card">
+          <p class="stat-label">Average song rating</p>
+          <p class="stat-value" id="monthly-average-song-rating">—</p>
+        </article>
+        <article class="card stat-card">
+          <p class="stat-label">Average album rating</p>
+          <p class="stat-value" id="monthly-average-album-rating">—</p>
+          <p class="stat-detail">Album tracks only; each album counts equally</p>
+        </article>
+        <article class="card stat-card">
+          <p class="stat-label">Average EP rating</p>
+          <p class="stat-value" id="monthly-average-ep-rating">—</p>
+          <p class="stat-detail">EP tracks only; each EP counts equally</p>
+        </article>
+        <article class="card stat-card">
+          <p class="stat-label">Overall average artist rating</p>
+          <p class="stat-value" id="monthly-average-artist-rating">—</p>
+          <p class="stat-detail">Each artist counts equally</p>
+        </article>
+        <article class="card stat-card">
+          <p class="stat-label">Songs in your library</p>
+          <p class="stat-value" id="monthly-total-songs">0</p>
+          <p class="stat-detail" id="monthly-release-count">Across 0 albums, 0 EPs, and 0 singles</p>
+        </article>
+        <article class="card stat-card">
+          <p class="stat-label">Total listening time</p>
+          <p class="stat-value" id="monthly-total-length">0m</p>
+          <p class="stat-detail">Combined song length</p>
+        </article>
+      </div>
+    </section>
+
     <section class="panel" id="ratings-panel" role="tabpanel" aria-labelledby="ratings-tab" hidden>
       <section class="card rating-chart-card" aria-labelledby="rating-chart-heading">
         <div class="rating-chart-header">
@@ -510,6 +557,9 @@
       const epSearch = document.querySelector("#ep-search");
       const artistSearch = document.querySelector("#artist-search");
       const artistMinSongs = document.querySelector("#artist-min-songs");
+      const monthlyRecapMonth = document.querySelector("#monthly-recap-month");
+      const today = new Date();
+      monthlyRecapMonth.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
       const ratingPages = {
         album: { page: 1 },
         ep: { page: 1 },
@@ -1103,12 +1153,36 @@
         container.append(pagination);
       }
 
-      function renderStats() {
-        const statsSongs = geekedFilter.checked ? songs.filter((song) => song.geeked) : songs;
+      function getSummaryMetrics(statsSongs) {
         const ratedStatsSongs = statsSongs.filter((song) => Number(song.rating) > 0);
         const albums = getAlbums(ratedStatsSongs);
         const eps = getEPs(ratedStatsSongs);
         const artists = getArtists(ratedStatsSongs);
+        return {
+          ratedStatsSongs,
+          albums,
+          eps,
+          artists,
+          averageSong: ratedStatsSongs.length
+            ? ratedStatsSongs.reduce((sum, song) => sum + Number(song.rating), 0) / ratedStatsSongs.length
+            : null,
+          averageAlbum: albums.length
+            ? albums.reduce((sum, album) => sum + album.average, 0) / albums.length
+            : null,
+          averageEP: eps.length
+            ? eps.reduce((sum, ep) => sum + ep.average, 0) / eps.length
+            : null,
+          averageArtist: artists.length
+            ? artists.reduce((sum, artist) => sum + artist.average, 0) / artists.length
+            : null,
+          totalSeconds: ratedStatsSongs.reduce((sum, song) => sum + song.lengthSeconds, 0)
+        };
+      }
+
+      function renderStats() {
+        const statsSongs = geekedFilter.checked ? songs.filter((song) => song.geeked) : songs;
+        const { ratedStatsSongs, albums, eps, artists, averageSong, averageAlbum, averageEP, averageArtist, totalSeconds } =
+          getSummaryMetrics(statsSongs);
         const albumQuery = albumSearch.value.trim().toLocaleLowerCase();
         const epQuery = epSearch.value.trim().toLocaleLowerCase();
         const artistQuery = artistSearch.value.trim().toLocaleLowerCase();
@@ -1123,12 +1197,6 @@
           artist.ratings.length >= minimumArtistSongs &&
           artist.name.toLocaleLowerCase().includes(artistQuery)
         );
-        const averageSong = ratedStatsSongs.length ? ratedStatsSongs.reduce((sum, song) => sum + song.rating, 0) / ratedStatsSongs.length : null;
-        const averageAlbum = albums.length ? albums.reduce((sum, album) => sum + album.average, 0) / albums.length : null;
-        const averageEP = eps.length ? eps.reduce((sum, ep) => sum + ep.average, 0) / eps.length : null;
-        const averageArtist = artists.length ? artists.reduce((sum, artist) => sum + artist.average, 0) / artists.length : null;
-        const totalSeconds = ratedStatsSongs.reduce((sum, song) => sum + song.lengthSeconds, 0);
-
         document.querySelector("#average-song-rating").textContent = averageSong === null ? "—" : formatAverageRating(averageSong);
         document.querySelector("#average-album-rating").textContent = averageAlbum === null ? "—" : formatAverageRating(averageAlbum);
         document.querySelector("#average-ep-rating").textContent = averageEP === null ? "—" : formatAverageRating(averageEP);
@@ -1266,6 +1334,33 @@
           }
         }
         appendRatingPagination(artistBreakdown, filteredArtists, ratingPages.artist, "artists");
+        renderMonthlyRecap();
+      }
+
+      function renderMonthlyRecap() {
+        const selectedMonth = monthlyRecapMonth.value;
+        const monthSongs = songs.filter((song) => {
+          const addedDate = new Date(song.createdAt);
+          if (!Number.isFinite(addedDate.getTime())) return false;
+          const addedMonth = `${addedDate.getFullYear()}-${String(addedDate.getMonth() + 1).padStart(2, "0")}`;
+          return addedMonth === selectedMonth;
+        });
+        const { ratedStatsSongs, albums, eps, artists, averageSong, averageAlbum, averageEP, averageArtist, totalSeconds } =
+          getSummaryMetrics(monthSongs);
+
+        document.querySelector("#monthly-average-song-rating").textContent =
+          averageSong === null ? "—" : formatAverageRating(averageSong);
+        document.querySelector("#monthly-average-album-rating").textContent =
+          averageAlbum === null ? "—" : formatAverageRating(averageAlbum);
+        document.querySelector("#monthly-average-ep-rating").textContent =
+          averageEP === null ? "—" : formatAverageRating(averageEP);
+        document.querySelector("#monthly-average-artist-rating").textContent =
+          averageArtist === null ? "—" : formatAverageRating(averageArtist);
+        document.querySelector("#monthly-total-songs").textContent = String(ratedStatsSongs.length);
+        const singles = ratedStatsSongs.filter((song) => song.releaseType === "single").length;
+        document.querySelector("#monthly-release-count").textContent =
+          `Across ${albums.length} ${albums.length === 1 ? "album" : "albums"}, ${eps.length} EP${eps.length === 1 ? "" : "s"}, and ${singles} ${singles === 1 ? "single" : "singles"}`;
+        document.querySelector("#monthly-total-length").textContent = formatTotalDuration(totalSeconds);
       }
 
       function openReleaseSongs(releaseType, releaseName, artistName) {
@@ -1665,6 +1760,7 @@
             panel.hidden = !selected;
           }
           if (tab.id === "stats-tab") renderStats();
+          if (tab.id === "monthly-recap-tab") renderMonthlyRecap();
           if (tab.id === "ratings-tab") renderRatingChart(true);
         });
       }
@@ -1689,6 +1785,7 @@
         ratingPages.artist.page = 1;
         renderStats();
       });
+      monthlyRecapMonth.addEventListener("input", renderMonthlyRecap);
       document.querySelector("#export-library").addEventListener("click", () => {
         const data = JSON.stringify({ version: 6, songs }, null, 2);
         const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
