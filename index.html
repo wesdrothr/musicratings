@@ -167,6 +167,8 @@
     .pagination-info { min-width: 120px; color: var(--muted); font-size: 12px; text-align: center; }
 
     .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .stats-rating-breakdowns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 16px; }
+    .stats-rating-breakdowns .artist-ratings-card { margin-top: 0; }
     .month-picker { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--muted); }
     .month-picker input { width: auto; min-width: 155px; }
     .stat-card { min-height: 142px; padding: 21px; }
@@ -222,6 +224,7 @@
     @media (max-width: 820px) {
       .library-layout { grid-template-columns: 1fr; }
       .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stats-rating-breakdowns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 520px) {
       .shell { width: min(100% - 28px, 1120px); padding-top: 28px; }
@@ -233,6 +236,7 @@
       .bulk-track-row .bulk-track-remove { grid-column: 3; grid-row: 1; }
       .bulk-track-remove { min-height: 38px; }
       .stats-grid { gap: 9px; }
+      .stats-rating-breakdowns { grid-template-columns: 1fr; }
       .stat-card { min-height: 126px; padding: 16px; }
       .album-row { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 9px; padding: 13px 17px; }
       .leaderboard-rank { width: 36px; height: 36px; font-size: 12px; }
@@ -393,31 +397,33 @@
           <p class="stat-detail">Combined song length</p>
         </article>
       </div>
-      <section class="card albums-card" aria-labelledby="album-breakdown-heading">
-        <div class="list-header">
-          <h2 id="album-breakdown-heading">Album ratings</h2>
-          <input class="library-search rating-search" id="album-search" type="search" placeholder="Search albums">
-        </div>
-        <div id="album-breakdown"></div>
-      </section>
-      <section class="card albums-card" aria-labelledby="ep-breakdown-heading">
-        <div class="list-header">
-          <h2 id="ep-breakdown-heading">EP ratings</h2>
-          <input class="library-search rating-search" id="ep-search" type="search" placeholder="Search EPs">
-        </div>
-        <div id="ep-breakdown"></div>
-      </section>
-      <section class="card albums-card artist-ratings-card" aria-labelledby="artist-breakdown-heading">
-        <div class="list-header">
-          <h2 id="artist-breakdown-heading">Artist ratings</h2>
-          <div class="artist-rating-filters">
-            <label for="artist-min-songs">Min. songs</label>
-            <input id="artist-min-songs" type="number" min="1" step="1" value="1" inputmode="numeric">
-            <input class="library-search rating-search" id="artist-search" type="search" placeholder="Search artists" aria-label="Search artists">
+      <div class="stats-rating-breakdowns">
+        <section class="card albums-card" aria-labelledby="album-breakdown-heading">
+          <div class="list-header">
+            <h2 id="album-breakdown-heading">Album ratings</h2>
+            <input class="library-search rating-search" id="album-search" type="search" placeholder="Search albums">
           </div>
-        </div>
-        <div id="artist-breakdown"></div>
-      </section>
+          <div id="album-breakdown"></div>
+        </section>
+        <section class="card albums-card" aria-labelledby="ep-breakdown-heading">
+          <div class="list-header">
+            <h2 id="ep-breakdown-heading">EP ratings</h2>
+            <input class="library-search rating-search" id="ep-search" type="search" placeholder="Search EPs">
+          </div>
+          <div id="ep-breakdown"></div>
+        </section>
+        <section class="card albums-card artist-ratings-card" aria-labelledby="artist-breakdown-heading">
+          <div class="list-header">
+            <h2 id="artist-breakdown-heading">Artist ratings</h2>
+            <div class="artist-rating-filters">
+              <label for="artist-min-songs">Min. songs</label>
+              <input id="artist-min-songs" type="number" min="1" step="1" value="1" inputmode="numeric">
+              <input class="library-search rating-search" id="artist-search" type="search" placeholder="Search artists" aria-label="Search artists">
+            </div>
+          </div>
+          <div id="artist-breakdown"></div>
+        </section>
+      </div>
     </section>
 
     <section class="panel" id="monthly-recap-panel" role="tabpanel" aria-labelledby="monthly-recap-tab" hidden>

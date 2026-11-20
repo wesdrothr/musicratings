@@ -35,6 +35,8 @@ selected month.
 Album and EP statistics are tracked separately in their own average ratings
 and breakdowns. Album and EP groupings use the main artists only. Featured
 artists are included in each featured artist's average and ranked song list.
+In the Stats tab, Album, EP, and Artist rating breakdowns appear side by side
+on wide screens and stack on smaller screens.
 Album, EP, and artist rating lists are ordered from highest average rating to
 lowest. Artist ratings are the average song rating for each credited artist. Mark a song as GEEKED in the
 input form, then use the Stats tab's GEEKED filter to calculate stats using
